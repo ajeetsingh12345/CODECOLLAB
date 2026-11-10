@@ -1,0 +1,27 @@
+{
+  "name": "codecollab-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@monaco-editor/react": "^4.7.0",
+    "@reduxjs/toolkit": "^2.9.0",
+    "next": "^15.5.6",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "react-redux": "^9.2.0",
+    "socket.io-client": "^4.8.1",
+    "yjs": "^13.6.27"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.16",
+    "eslint": "^9.37.0",
+    "eslint-config-next": "^15.5.6",
+    "tailwindcss": "^4.1.16"
+  }
+}

@@ -1,0 +1,17 @@
+import { Router } from "express";
+import { authenticate } from "../middleware/auth.js";
+import { listSnippets, createSnippet, getSnippet, updateSnippet, deleteSnippet, versions, restoreVersion, shareSnippet } from "../controllers/snippet.controller.js";
+import { listComments, createComment, resolveComment } from "../controllers/comment.controller.js";
+const router = Router();
+router.get("/", authenticate, listSnippets);
+router.post("/", authenticate, createSnippet);
+router.get("/:id", authenticate, getSnippet);
+router.put("/:id", authenticate, updateSnippet);
+router.delete("/:id", authenticate, deleteSnippet);
+router.get("/:id/versions", authenticate, versions);
+router.post("/:id/versions/:versionId/restore", authenticate, restoreVersion);
+router.post("/:id/share", authenticate, shareSnippet);
+router.get("/:id/comments", authenticate, listComments);
+router.post("/:id/comments", authenticate, createComment);
+router.patch("/:id/comments/:commentId/resolve", authenticate, resolveComment);
+export default router;

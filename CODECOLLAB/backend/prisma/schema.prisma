@@ -1,0 +1,190 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum SnippetVisibility {
+  PRIVATE
+  PUBLIC
+  UNLISTED
+}
+
+enum PermissionRole {
+  EDITOR
+  VIEWER
+}
+
+enum NotificationType {
+  COMMENT
+  REPLY
+  SHARE
+  MENTION
+  DISCUSSION_RESOLVED
+  SNIPPET_UPDATED
+}
+
+model User {
+  id             String               @id @default(cuid())
+  name           String
+  email          String               @unique
+  passwordHash   String?
+  avatarUrl      String?
+  bio            String?
+  role           UserRole             @default(USER)
+  snippets       Snippet[]            @relation("SnippetOwner")
+  permissions    SnippetPermission[]
+  versions       SnippetVersion[]
+  comments       Comment[]
+  activities     Activity[]
+  notifications  Notification[]
+  refreshTokens  RefreshToken[]
+  oauthAccounts  OAuthAccount[]
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+}
+
+model OAuthAccount {
+  id                String   @id @default(cuid())
+  provider          String
+  providerAccountId String
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt         DateTime @default(now())
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Snippet {
+  id           String               @id @default(cuid())
+  title        String
+  description  String?
+  content      String               @db.Text
+  language     String               @default("javascript")
+  visibility   SnippetVisibility    @default(PRIVATE)
+  ownerId      String
+  owner        User                 @relation("SnippetOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  permissions  SnippetPermission[]
+  versions     SnippetVersion[]
+  comments     Comment[]
+  tags         SnippetTag[]
+  activities   Activity[]
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+
+  @@index([ownerId, updatedAt])
+  @@index([language, visibility])
+  @@index([title])
+}
+
+model SnippetPermission {
+  id        String         @id @default(cuid())
+  snippetId String
+  userId    String
+  role      PermissionRole
+  snippet   Snippet        @relation(fields: [snippetId], references: [id], onDelete: Cascade)
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime       @default(now())
+
+  @@unique([snippetId, userId])
+  @@index([userId])
+}
+
+model SnippetVersion {
+  id        String   @id @default(cuid())
+  snippetId String
+  userId    String
+  title     String
+  content   String   @db.Text
+  language  String
+  message   String?
+  snippet   Snippet  @relation(fields: [snippetId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([snippetId, createdAt])
+}
+
+model Comment {
+  id          String    @id @default(cuid())
+  snippetId   String
+  userId      String
+  parentId    String?
+  lineNumber  Int?
+  body        String    @db.Text
+  isResolved  Boolean   @default(false)
+  snippet     Snippet   @relation(fields: [snippetId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent      Comment?  @relation("CommentThread", fields: [parentId], references: [id], onDelete: Cascade)
+  replies     Comment[] @relation("CommentThread")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([snippetId, createdAt])
+  @@index([parentId])
+}
+
+model Tag {
+  id       String        @id @default(cuid())
+  name     String        @unique
+  snippets SnippetTag[]
+}
+
+model SnippetTag {
+  snippetId String
+  tagId     String
+  snippet   Snippet @relation(fields: [snippetId], references: [id], onDelete: Cascade)
+  tag       Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([snippetId, tagId])
+  @@index([tagId])
+}
+
+model Activity {
+  id        String   @id @default(cuid())
+  userId    String
+  snippetId String?
+  action    String
+  detail    String?
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  snippet   Snippet? @relation(fields: [snippetId], references: [id], onDelete: SetNull)
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([userId, createdAt])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  message   String
+  link      String?
+  isRead    Boolean          @default(false)
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime         @default(now())
+
+  @@index([userId, isRead, createdAt])
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  userId    String
+  expiresAt DateTime
+  revokedAt DateTime?
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+}
